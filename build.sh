@@ -27,6 +27,13 @@ fi
 [ -f module/system/media/bootanimation.zip ] || {
   echo "error: no animation; run ./build.sh --regen" >&2; exit 1; }
 
+# bootanimation reads /product/media before /system/media, and a ROM that
+# ships its animation there wins over a /system/media overlay.  Shipping the
+# file at both paths lets the module's overlay cover it, which lands earlier
+# and more reliably than a bind mount from post-fs-data.sh.
+mkdir -p module/system/product/media
+cp -f module/system/media/bootanimation.zip module/system/product/media/bootanimation.zip
+
 VERSION=$(sed -n 's/^version=//p' module/module.prop)
 OUT="dist/PixelTabletBoot-${VERSION}.zip"
 

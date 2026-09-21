@@ -79,6 +79,8 @@ fi
 
 set_perm_recursive "$MODPATH" 0 0 0755 0644
 set_perm "$MODPATH/system/media/bootanimation.zip" 0 0 0644 u:object_r:system_file:s0
+[ -f "$MODPATH/system/product/media/bootanimation.zip" ] && \
+  set_perm "$MODPATH/system/product/media/bootanimation.zip" 0 0 0644 u:object_r:system_file:s0
 
 ui_print " "
 ui_print "- Done.  Reboot to see it."
