@@ -15,7 +15,7 @@ repeats until Android is ready.
 
 | | |
 |---|---|
-| Package | `dist/PixelTabletBoot-v1.1.0.zip` (888 KB) |
+| Package | `dist/PixelTabletBoot-v1.2.0.zip` (892 KB) |
 | Tested root managers | KernelSU (Magisk and APatch use the same module format) |
 | Android | 8.0+ |
 
@@ -38,12 +38,24 @@ it, and there is no rooted way to do it.
 
 ## Install
 
-1. Download `dist/PixelTabletBoot-v1.1.0.zip`.
+1. Download `dist/PixelTabletBoot-v1.2.0.zip`.
 2. KernelSU Manager → **Modules** → **Install from storage** → pick the zip.
 3. Reboot.
 
 The installer prints your panel size and how many Samsung animation files it
 hid, so you can sanity-check before rebooting.
+
+## ROM compatibility
+
+| ROM | Works | Notes |
+|---|---|---|
+| AOSP-based (DerpFest, LineageOS, crDroid, ...) | Yes | Uses AOSP `bootanimation`, which reads `bootanimation.zip` natively. Nothing to work around. |
+| Stock One UI | Probably | Needs Samsung's `bootanimation` to fall back to the zip once the `.qmg` files are hidden. Untested on hardware — see [black screen](#if-you-get-a-black-screen-while-booting). |
+
+On an AOSP ROM the `.qmg` masking finds nothing and quietly does nothing; the
+module just overrides whatever `bootanimation.zip` the ROM ships. The
+installer prints which animation it found, so the log tells you which case
+you are in.
 
 ## Why it also hides Samsung's `.qmg` files
 
@@ -64,8 +76,9 @@ You can turn either behaviour off in `config.sh` before flashing.
 
 ## If you get a black screen while booting
 
-The device still boots — only the animation is missing. It means Samsung's
-`bootanimation` did not fall back to the zip on your firmware.
+This only happens on stock One UI. The device still boots — only the
+animation is missing. It means Samsung's `bootanimation` did not fall back to
+the zip on your firmware.
 
 Disable the module in KernelSU Manager and reboot, or set
 `MASK_SAMSUNG_QMG=0` in the module's `config.sh` and reboot to get the

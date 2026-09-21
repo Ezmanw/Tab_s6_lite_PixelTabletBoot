@@ -35,6 +35,20 @@ SIZE=$(wm size 2>/dev/null | sed -n 's/^Physical size: //p')
 [ -n "$SIZE" ] && ui_print "- Panel: $SIZE (animation is 2000x1200)"
 [ -n "$FB" ] && ui_print "- Display orientation: $FB"
 
+# Report which animation the ROM currently uses.  AOSP-based ROMs (DerpFest,
+# LineageOS, ...) ship a plain bootanimation.zip and need no .qmg handling;
+# One UI ships .qmg and ignores the zip until those are gone.
+FOUND=""
+for P in /product/media/bootanimation.zip /system/product/media/bootanimation.zip \
+         /oem/media/bootanimation.zip /system/media/bootanimation.zip; do
+  [ -f "$P" ] && FOUND="$FOUND $P"
+done
+if [ -n "$FOUND" ]; then
+  for P in $FOUND; do ui_print "- ROM animation found: $P"; done
+else
+  ui_print "- ROM ships no bootanimation.zip"
+fi
+
 # Samsung's bootanimation prefers its own .qmg files and ignores
 # bootanimation.zip while they exist.  A character device 0:0 in the module
 # tree is the standard way to make a file disappear from the mounted view.
@@ -55,9 +69,9 @@ if [ "$MASK_SAMSUNG_QMG" = "1" ]; then
     done
   done
   if [ "$MASKED" -gt 0 ]; then
-    ui_print "- Hid $MASKED Samsung .qmg animation file(s)"
+    ui_print "- One UI detected: hid $MASKED Samsung .qmg file(s)"
   else
-    ui_print "- No Samsung .qmg files found (nothing to hide)"
+    ui_print "- No Samsung .qmg files (AOSP-style ROM, nothing to hide)"
   fi
 else
   ui_print "! MASK_SAMSUNG_QMG=0: Samsung's animation will still win"
