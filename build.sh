@@ -34,6 +34,10 @@ fi
 mkdir -p module/system/product/media
 cp -f module/system/media/bootanimation.zip module/system/product/media/bootanimation.zip
 
+# Ship the diagnostic inside the module too, so it can be run on-device
+# without fetching anything else.
+cp -f tools/diagnose.sh module/diagnose.sh
+
 VERSION=$(sed -n 's/^version=//p' module/module.prop)
 OUT="dist/PixelTabletBoot-${VERSION}.zip"
 

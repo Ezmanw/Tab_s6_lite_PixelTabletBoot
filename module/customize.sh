@@ -83,6 +83,10 @@ set_perm "$MODPATH/system/media/bootanimation.zip" 0 0 0644 u:object_r:system_fi
   set_perm "$MODPATH/system/product/media/bootanimation.zip" 0 0 0644 u:object_r:system_file:s0
 
 ui_print " "
+ui_print "- After rebooting, this module's description in KernelSU"
+ui_print "  Manager shows whether the animation actually won."
+ui_print "  Full report: /sdcard/pixeltabletboot.log"
+ui_print " "
 ui_print "- Done.  Reboot to see it."
 ui_print "  Black screen at boot?  Disable the module in KernelSU"
 ui_print "  Manager and reboot; see the README for details."
