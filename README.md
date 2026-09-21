@@ -4,11 +4,13 @@ A KernelSU module that replaces the Samsung boot animation with a
 Pixel-Tablet-style landscape one: four Google-coloured dots fly in, swirl into
 a ring, and orbit until Android finishes booting.
 
-Rendered at **2000x1200**, the Tab S6 Lite's native panel resolution.
+Rendered at **2000x1200**, the Tab S6 Lite's native panel resolution, on a
+black background. A white version is one flag away — see
+[Regenerating](#regenerating-the-animation).
 
 | | |
 |---|---|
-| Package | `dist/PixelTabletBoot-v1.0.0.zip` (740 KB) |
+| Package | `dist/PixelTabletBoot-v1.1.0.zip` (888 KB) |
 | Tested root managers | KernelSU (Magisk and APatch use the same module format) |
 | Android | 8.0+ |
 
@@ -31,7 +33,7 @@ it, and there is no rooted way to do it.
 
 ## Install
 
-1. Download `dist/PixelTabletBoot-v1.0.0.zip`.
+1. Download `dist/PixelTabletBoot-v1.1.0.zip`.
 2. KernelSU Manager → **Modules** → **Install from storage** → pick the zip.
 3. Reboot.
 
@@ -72,13 +74,14 @@ Google device, so there is no proprietary asset here.
 
 ```bash
 pip install Pillow
-./build.sh --regen                      # defaults: 2000x1200, 30fps
+./build.sh --regen                      # defaults: dark, 2000x1200, 30fps
+./build.sh --regen --theme light        # white background instead
 ./build.sh --regen --rotate 90          # if it renders sideways (see below)
 ./build.sh --regen --fps 60 --loop-seconds 1.5
 ```
 
-Useful flags: `--width` `--height` `--rotate` `--fps` `--intro-seconds`
-`--loop-seconds` `--colors`.
+Useful flags: `--theme` (`dark` or `light`) `--width` `--height` `--rotate`
+`--fps` `--intro-seconds` `--loop-seconds` `--colors`.
 
 ### If the animation appears rotated
 

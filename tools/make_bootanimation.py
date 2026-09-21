@@ -5,6 +5,8 @@ Generate a Pixel-Tablet-style bootanimation.zip.
 Four Google-coloured dots fly in as a row, swirl into a ring (part0, plays
 once), then orbit and breathe forever until Android is ready (part1, looped).
 
+The dots sit on a dark background by default; pass --theme light for white.
+
 Defaults target the Galaxy Tab S6 Lite panel: 2000x1200, landscape.
 """
 
@@ -26,7 +28,10 @@ DOT_COLORS = [
     (52, 168, 83),    # green
 ]
 
-BG = (255, 255, 255)
+THEMES = {
+    "dark": (0, 0, 0),
+    "light": (255, 255, 255),
+}
 SUPERSAMPLE = 8  # sprite is rendered this many times oversized, then scaled down
 
 
@@ -47,7 +52,8 @@ def make_disc(color, size):
 class Composer:
     """Draws one frame of the animation into a canvas of the given size."""
 
-    def __init__(self, width, height, rotate):
+    def __init__(self, width, height, rotate, theme):
+        self.bg = THEMES[theme]
         # Compose in the orientation the viewer should see, then rotate the
         # finished frame to match the panel's native framebuffer.
         self.rotate = rotate % 360
@@ -73,7 +79,7 @@ class Composer:
 
     def render(self, positions):
         """positions: list of (x, y, radius) in composition space."""
-        canvas = Image.new("RGB", (self.cw, self.ch), BG)
+        canvas = Image.new("RGB", (self.cw, self.ch), self.bg)
         for i, (x, y, r) in enumerate(positions):
             if r > 0.5:
                 self.paste_dot(canvas, i, x, y, r)
@@ -146,7 +152,7 @@ def build(args):
     os.makedirs(p0)
     os.makedirs(p1)
 
-    comp = Composer(args.width, args.height, args.rotate)
+    comp = Composer(args.width, args.height, args.rotate, args.theme)
 
     n_intro = int(round(args.fps * args.intro_seconds))
     n_loop = int(round(args.fps * args.loop_seconds))
@@ -202,6 +208,8 @@ def main():
                     help="visible height, as you want to see it (default 1200)")
     ap.add_argument("--rotate", type=int, default=0, choices=[0, 90, 180, 270],
                     help="rotate frames to match the panel's framebuffer")
+    ap.add_argument("--theme", choices=sorted(THEMES), default="dark",
+                    help="background behind the dots (default dark)")
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--intro-seconds", type=float, default=1.5)
     ap.add_argument("--loop-seconds", type=float, default=2.0)
