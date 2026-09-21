@@ -24,7 +24,7 @@ animation — there is no canonical "Gemini boot animation" to copy.
 
 | | |
 |---|---|
-| Package | `dist/PixelTabletBoot-v2.1.0.zip` (1.7 MB) |
+| Package | `dist/PixelTabletBoot-v2.2.0.zip` (1.7 MB) |
 | Tested root managers | KernelSU (Magisk and APatch use the same module format) |
 | Android | 8.0+ |
 
@@ -47,7 +47,7 @@ it, and there is no rooted way to do it.
 
 ## Install
 
-1. Download `dist/PixelTabletBoot-v2.1.0.zip`.
+1. Download `dist/PixelTabletBoot-v2.2.0.zip`.
 2. KernelSU Manager → **Modules** → **Install from storage** → pick the zip.
 3. Answer the prompts with the volume keys. If you have supplied your own
    animation (see below) you are asked about that first; otherwise you go
@@ -55,8 +55,26 @@ it, and there is no rooted way to do it.
    back to the dots if nothing is pressed.
 4. Reboot.
 
-To skip the prompts, set `STYLE` to `official`, `dots` or `spark` in
-`config.sh` before flashing.
+### If the volume keys do not work
+
+Key detection depends on `getevent` behaving during install, and that is not
+guaranteed on every ROM and root manager. The reliable alternative needs no
+key presses at all — write one word into a file:
+
+```
+/sdcard/PixelTabletBoot/style.txt     ->  official, dots or spark
+```
+
+Create it with any file manager or text editor, then install the module. It
+overrides the prompts entirely, and the installer prints which style it read.
+Leading/trailing spaces, capitals and Windows line endings are all fine.
+
+`/sdcard/Download/pixeltabletboot-style.txt` works too; add more locations
+with `STYLE_FILES` in `config.sh`. Setting `STYLE` in `config.sh` also still
+works, but that means editing inside the zip.
+
+When no key is detected the installer now says so and explains why, rather
+than silently taking the default.
 
 ## Using the real Google animation
 

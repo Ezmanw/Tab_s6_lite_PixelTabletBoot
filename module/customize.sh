@@ -40,14 +40,37 @@ fi
 [ -n "$FB" ] && ui_print "- Display orientation: $FB"
 
 # --- pick a style -----------------------------------------------------
-# getevent blocks until a key is pressed, so it is bounded by `timeout`.
-# Without a timeout binary there is no safe way to wait, so we take the
-# default rather than risk hanging the installer forever.
+# getevent blocks until an input event arrives, so the wait has to be bounded.
+# `timeout` is used when present; otherwise getevent is backgrounded and
+# killed, which needs no extra binaries.
 #
 # 0 = got a volume key, 1 = some other event (keep waiting), 2 = cannot wait.
+GETEVENT=$(command -v getevent 2>/dev/null || echo /system/bin/getevent)
+
 read_volume_key() {
-  command -v timeout >/dev/null 2>&1 || return 2
-  OUT=$(timeout "$1" getevent -lqc 1 2>/dev/null)
+  OUT=""
+  EVTMP="${TMPDIR:-/data/local/tmp}/pxtb.ev.$$"
+  rm -f "$EVTMP"
+
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$1" "$GETEVENT" -lqc 1 > "$EVTMP" 2>/dev/null
+  else
+    # No timeout binary: run getevent in the background and kill it once the
+    # wait is up, polling for it to finish in the meantime.
+    "$GETEVENT" -lqc 1 > "$EVTMP" 2>/dev/null &
+    GPID=$!
+    I=0
+    while [ "$I" -lt "$1" ]; do
+      kill -0 "$GPID" 2>/dev/null || break
+      sleep 1
+      I=$((I + 1))
+    done
+    kill "$GPID" 2>/dev/null
+    wait "$GPID" 2>/dev/null
+  fi
+
+  OUT=$(cat "$EVTMP" 2>/dev/null)
+  rm -f "$EVTMP"
   [ -z "$OUT" ] && return 2
   KEY=$(echo "$OUT" | grep -o 'KEY_VOLUMEUP\|KEY_VOLUMEDOWN' | head -1)
   [ -n "$KEY" ] && return 0
@@ -77,6 +100,20 @@ ask_keys() {
     TRIES=$((TRIES + 1))
   done
 }
+
+# A style written to a file is the most reliable route: no input handling,
+# and it can be edited with any file manager.
+FILE_STYLE=""
+for F in $STYLE_FILES; do
+  [ -f "$F" ] || continue
+  FILE_STYLE=$(tr -d ' \t\r\n' < "$F" 2>/dev/null | tr 'A-Z' 'a-z')
+  [ -n "$FILE_STYLE" ] && { ui_print "- Style from $F: $FILE_STYLE"; break; }
+done
+case "$FILE_STYLE" in
+  official|dots|spark) STYLE="$FILE_STYLE" ;;
+  "") ;;
+  *)  ui_print "! $FILE_STYLE is not a valid style, ignoring" ;;
+esac
 
 # An animation the user supplied themselves, e.g. one pulled from a Pixel
 # Tablet factory image.  Checked for a zip magic number, not just existence.
@@ -128,8 +165,13 @@ case "$STYLE" in
 
     if [ -z "$STYLE" ]; then
       STYLE="$DEFAULT_STYLE"
-      ui_print "- Nothing chosen, using default: $STYLE"
-      ui_print "  (set STYLE in config.sh to skip these prompts)"
+      ui_print "- No volume key detected, using default: $STYLE"
+      [ -x "$GETEVENT" ] || ui_print "  reason: no getevent at $GETEVENT"
+      command -v timeout >/dev/null 2>&1 || \
+        ui_print "  reason: no timeout binary (used the fallback wait)"
+      ui_print "  To choose without the volume keys, write dots, spark or"
+      ui_print "  official into /sdcard/PixelTabletBoot/style.txt and"
+      ui_print "  install this module again."
     else
       ui_print "- Chose: $STYLE"
     fi
