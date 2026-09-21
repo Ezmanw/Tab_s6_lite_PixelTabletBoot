@@ -8,7 +8,9 @@ Rendered at **2000x1200**, the Tab S6 Lite's native panel resolution, on a
 black background. A white version is one flag away — see
 [Regenerating](#regenerating-the-animation).
 
-Two styles, chosen with the volume keys while it installs:
+Two styles are built in, chosen with the volume keys while it installs —
+plus the real Google animation if you supply it yourself
+([how](#using-the-real-google-animation)):
 
 | Volume UP — Google dots | Volume DOWN — Gemini spark |
 |---|---|
@@ -22,7 +24,7 @@ animation — there is no canonical "Gemini boot animation" to copy.
 
 | | |
 |---|---|
-| Package | `dist/PixelTabletBoot-v2.0.0.zip` (1.7 MB) |
+| Package | `dist/PixelTabletBoot-v2.1.0.zip` (1.7 MB) |
 | Tested root managers | KernelSU (Magisk and APatch use the same module format) |
 | Android | 8.0+ |
 
@@ -45,15 +47,57 @@ it, and there is no rooted way to do it.
 
 ## Install
 
-1. Download `dist/PixelTabletBoot-v2.0.0.zip`.
+1. Download `dist/PixelTabletBoot-v2.1.0.zip`.
 2. KernelSU Manager → **Modules** → **Install from storage** → pick the zip.
-3. When it asks, press **Volume Up** for the dots or **Volume Down** for the
-   spark. It waits 20 seconds and falls back to the dots if neither is
-   pressed.
+3. Answer the prompts with the volume keys. If you have supplied your own
+   animation (see below) you are asked about that first; otherwise you go
+   straight to the built-in styles. Each prompt waits 20 seconds and falls
+   back to the dots if nothing is pressed.
 4. Reboot.
 
-To skip the prompt entirely, set `STYLE=dots` or `STYLE=spark` in
+To skip the prompts, set `STYLE` to `official`, `dots` or `spark` in
 `config.sh` before flashing.
+
+## Using the real Google animation
+
+**This module ships no Google artwork.** The Pixel Tablet's own boot
+animation is a proprietary asset from Google's firmware and cannot be
+redistributed here — so the module reads one you supply instead.
+
+Put the file at any of these paths and reinstall the module; it is offered
+on **Volume Up**:
+
+```
+/sdcard/PixelTabletBoot/official.zip
+/sdcard/PixelTabletBoot/bootanimation.zip
+/sdcard/Download/bootanimation.zip
+```
+
+The file is checked for a zip signature, so a wrong or partial download is
+ignored rather than installed. Add more locations via `OFFICIAL_PATHS` in
+`config.sh`.
+
+### Getting it out of a factory image
+
+The Pixel Tablet is codename **`tangorpro`**. Its factory images are public
+at <https://developers.google.com/android/images>. The animation lives at
+`/product/media/bootanimation.zip` inside `product.img`:
+
+```bash
+unzip tangorpro-*.zip                  # -> image-tangorpro-*.zip
+unzip image-tangorpro-*.zip product.img
+fsck.erofs --extract=out product.img   # recent images are EROFS
+cp out/media/bootanimation.zip official.zip
+```
+
+Older images use a sparse ext4 `product.img`, which needs `simg2img` and a
+loopback mount instead. Either way you are extracting from firmware you
+downloaded yourself, for your own device.
+
+**One caveat worth knowing:** the Pixel Tablet's panel is 2560x1600 (16:10)
+and the Tab S6 Lite's is 2000x1200 (5:3). Those aspect ratios are close but
+not identical, so the real animation will be very slightly stretched. The
+built-in styles are drawn for your panel and are not.
 
 ### Why the animation might look stretched
 
@@ -185,7 +229,7 @@ tools/preview_gif.py            animated GIF preview of build/bootanim/
 tools/diagnose.sh               on-device check of which animation wins
 module/
   module.prop                   module metadata
-  config.sh                     STYLE, MASK_SAMSUNG_QMG, OVERRIDE_PRODUCT_OEM
+  config.sh                     STYLE, OFFICIAL_PATHS, MASK_SAMSUNG_QMG, ...
   variants/dots.zip             the two animations; customize.sh picks one
   variants/spark.zip
   customize.sh                  install-time: hide .qmg, set permissions

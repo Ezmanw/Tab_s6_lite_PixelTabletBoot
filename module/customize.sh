@@ -43,6 +43,7 @@ fi
 # getevent blocks until a key is pressed, so it is bounded by `timeout`.
 # Without a timeout binary there is no safe way to wait, so we take the
 # default rather than risk hanging the installer forever.
+#
 # 0 = got a volume key, 1 = some other event (keep waiting), 2 = cannot wait.
 read_volume_key() {
   command -v timeout >/dev/null 2>&1 || return 2
@@ -53,52 +54,100 @@ read_volume_key() {
   return 1
 }
 
+# Offers two choices and sets PICK to up, down, or "" if neither arrived.
+# A touch returns an event too, so non-volume input is ignored rather than
+# treated as an answer or as a reason to give up.
+ask_keys() {
+  ui_print " "
+  ui_print "    VOLUME UP   = $1"
+  ui_print "    VOLUME DOWN = $2"
+  ui_print " "
+  ui_print "  Waiting ${KEY_TIMEOUT}s..."
+  PICK=""
+  TRIES=0
+  while [ -z "$PICK" ] && [ "$TRIES" -lt 16 ]; do
+    read_volume_key "$KEY_TIMEOUT"
+    case "$?" in
+      0) case "$KEY" in
+           KEY_VOLUMEUP)   PICK=up ;;
+           KEY_VOLUMEDOWN) PICK=down ;;
+         esac ;;
+      2) break ;;
+    esac
+    TRIES=$((TRIES + 1))
+  done
+}
+
+# An animation the user supplied themselves, e.g. one pulled from a Pixel
+# Tablet factory image.  Checked for a zip magic number, not just existence.
+OFFICIAL=""
+for P in $OFFICIAL_PATHS; do
+  if [ -f "$P" ] && [ "$(head -c 2 "$P" 2>/dev/null)" = "PK" ]; then
+    OFFICIAL="$P"
+    break
+  fi
+done
+
 case "$STYLE" in
+  official)
+    [ -n "$OFFICIAL" ] || abort "! STYLE=official but no animation found in: $OFFICIAL_PATHS"
+    ui_print "- Style: official (set in config.sh)"
+    ;;
   dots|spark)
     ui_print "- Style: $STYLE (set in config.sh)"
     ;;
   *)
-    ui_print " "
-    ui_print "  Choose your boot animation:"
-    ui_print " "
-    ui_print "    VOLUME UP   = Google dots (classic Pixel Tablet)"
-    ui_print "    VOLUME DOWN = Gemini spark"
-    ui_print " "
-    ui_print "  Waiting ${KEY_TIMEOUT}s..."
     STYLE=""
-    TRIES=0
-    # A touch or any other input returns an event too, so ignore those and
-    # keep waiting rather than giving up on the first one.
-    while [ -z "$STYLE" ] && [ "$TRIES" -lt 16 ]; do
-      read_volume_key "$KEY_TIMEOUT"
-      case "$?" in
-        0) case "$KEY" in
-             KEY_VOLUMEUP)   STYLE=dots ;;
-             KEY_VOLUMEDOWN) STYLE=spark ;;
-           esac ;;
-        2) break ;;
+    ASK_BUILTIN=1     # whether to run the dots-vs-spark prompt
+
+    if [ -n "$OFFICIAL" ]; then
+      ui_print " "
+      ui_print "  Found your own animation:"
+      ui_print "    $OFFICIAL"
+      ask_keys "that animation" "the built-in styles"
+      case "$PICK" in
+        up)   STYLE=official; ASK_BUILTIN=0 ;;
+        down) ;;                       # fall through to the built-in prompt
+        *)    ASK_BUILTIN=0 ;;         # no key at all: do not ask again
       esac
-      TRIES=$((TRIES + 1))
-    done
+    else
+      ui_print " "
+      ui_print "  No user-supplied animation found.  To use the official"
+      ui_print "  Google one, put its bootanimation.zip at:"
+      ui_print "    /sdcard/PixelTabletBoot/official.zip"
+      ui_print "  and install this module again (see the README)."
+    fi
+
+    if [ -z "$STYLE" ] && [ "$ASK_BUILTIN" = 1 ]; then
+      ask_keys "Google dots (classic)" "Gemini spark"
+      case "$PICK" in
+        up)   STYLE=dots ;;
+        down) STYLE=spark ;;
+      esac
+    fi
+
     if [ -z "$STYLE" ]; then
       STYLE="$DEFAULT_STYLE"
-      ui_print "- No key detected, using default: $STYLE"
-      ui_print "  (set STYLE=dots or STYLE=spark in config.sh to skip this)"
+      ui_print "- Nothing chosen, using default: $STYLE"
+      ui_print "  (set STYLE in config.sh to skip these prompts)"
     else
-      [ "$STYLE" = dots ] && ui_print "- Volume UP: Google dots" \
-                          || ui_print "- Volume DOWN: Gemini spark"
+      ui_print "- Chose: $STYLE"
     fi
     ;;
 esac
 
-VARIANT="$MODPATH/variants/$STYLE.zip"
-[ -f "$VARIANT" ] || abort "! variant $STYLE missing from the package"
+if [ "$STYLE" = official ]; then
+  SRC="$OFFICIAL"
+else
+  SRC="$MODPATH/variants/$STYLE.zip"
+fi
+[ -f "$SRC" ] || abort "! animation $STYLE missing"
 
 # bootanimation reads /product/media before /system/media, so install to both
 # and let the overlay cover whichever one the ROM uses.
 for DEST in "$MODPATH/system/media" "$MODPATH/system/product/media"; do
   mkdir -p "$DEST"
-  cp -f "$VARIANT" "$DEST/bootanimation.zip" || abort "! could not stage $DEST"
+  cp -f "$SRC" "$DEST/bootanimation.zip" || abort "! could not stage $DEST"
 done
 rm -rf "$MODPATH/variants"
 echo "installed_style=$STYLE" > "$MODPATH/style"

@@ -2,10 +2,17 @@
 # Edit before flashing, or edit in place under the module directory and reboot.
 
 # Which animation to install:
-#   ask    prompt at install time with the volume keys (default)
-#   dots   Google dots, the classic Pixel Tablet look
-#   spark  the Gemini spark
+#   ask       prompt at install time with the volume keys (default)
+#   official  an animation you supplied yourself, see OFFICIAL_PATHS below
+#   dots      Google dots, the classic Pixel Tablet look
+#   spark     the Gemini spark
 STYLE=ask
+
+# Where to look for an animation you supplied yourself, such as the real
+# Google one pulled from a Pixel Tablet factory image.  The first readable
+# zip wins.  This module ships no Google artwork; see the README for how to
+# extract it from firmware you already have.
+OFFICIAL_PATHS="/sdcard/PixelTabletBoot/official.zip /sdcard/PixelTabletBoot/bootanimation.zip /sdcard/Download/bootanimation.zip"
 
 # Used when STYLE=ask but no key is pressed, or when the device has no
 # `timeout` binary to bound the wait.
