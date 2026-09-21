@@ -1,0 +1,6 @@
+id=pixeltabletboot
+name=Pixel Tablet Boot Animation (Tab S6 Lite)
+version=v1.0.0
+versionCode=1
+author=Ezmanw
+description=Replaces the Samsung boot animation with a Pixel-Tablet-style landscape animation. Also hides Samsung's .qmg animation, which otherwise takes priority over bootanimation.zip.
