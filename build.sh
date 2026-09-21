@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Builds the flashable KernelSU module into dist/.
-#   ./build.sh              package using the committed bootanimation.zip
-#   ./build.sh --regen      regenerate the animation first
-#   ./build.sh --regen --rotate 90 --width 2000 --height 1200
+#   ./build.sh              package using the committed animations
+#   ./build.sh --regen      regenerate both styles first
+#   ./build.sh --regen --scale 0.6 --rotate 90
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -17,26 +17,33 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$REGEN" = 1 ]; then
-  echo ">> generating animation"
-  python3 tools/make_bootanimation.py "${GEN_ARGS[@]}"
+  mkdir -p module/variants
+  for STYLE in dots spark; do
+    echo ">> generating $STYLE"
+    # The spark's gradient needs a deeper palette than the flat dots do.
+    EXTRA=()
+    [ "$STYLE" = spark ] && EXTRA=(--colors 128)
+    python3 tools/make_bootanimation.py --style "$STYLE" \
+      "${EXTRA[@]}" "${GEN_ARGS[@]}" -o "module/variants/$STYLE.zip"
+  done
 elif [ ${#GEN_ARGS[@]} -gt 0 ]; then
   echo "error: ${GEN_ARGS[*]} only applies with --regen" >&2
   exit 2
 fi
 
-[ -f module/system/media/bootanimation.zip ] || {
-  echo "error: no animation; run ./build.sh --regen" >&2; exit 1; }
+for STYLE in dots spark; do
+  [ -f "module/variants/$STYLE.zip" ] || {
+    echo "error: missing module/variants/$STYLE.zip; run ./build.sh --regen" >&2
+    exit 1; }
+done
 
-# bootanimation reads /product/media before /system/media, and a ROM that
-# ships its animation there wins over a /system/media overlay.  Shipping the
-# file at both paths lets the module's overlay cover it, which lands earlier
-# and more reliably than a bind mount from post-fs-data.sh.
-mkdir -p module/system/product/media
-cp -f module/system/media/bootanimation.zip module/system/product/media/bootanimation.zip
-
-# Ship the diagnostic inside the module too, so it can be run on-device
-# without fetching anything else.
+# Ship the diagnostic inside the module so it can be run on-device without
+# fetching anything else.
 cp -f tools/diagnose.sh module/diagnose.sh
+
+# customize.sh picks a variant at install time and copies it into place, so
+# the package carries no system/ tree of its own.
+rm -rf module/system
 
 VERSION=$(sed -n 's/^version=//p' module/module.prop)
 OUT="dist/PixelTabletBoot-${VERSION}.zip"

@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 module/system/product/
 module/diagnose.sh
+module/system/

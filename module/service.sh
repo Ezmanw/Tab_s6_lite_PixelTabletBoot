@@ -8,6 +8,10 @@ PROP="$MODDIR/module.prop"
 LOG=/data/adb/pixeltabletboot.log
 BASE="Pixel-Tablet-style landscape boot animation. Hides Samsung's .qmg, which otherwise takes priority over bootanimation.zip."
 
+# Which style was chosen at install time, for the status line.
+STYLE=$(sed -n 's/^installed_style=//p' "$MODDIR/style" 2>/dev/null)
+[ -n "$STYLE" ] && BASE="Style: $STYLE. $BASE"
+
 # Wait for /data to settle before writing anything.
 for i in 1 2 3 4 5 6 7 8 9 10; do
   [ -d /data/adb ] && break
