@@ -8,6 +8,11 @@ Rendered at **2000x1200**, the Tab S6 Lite's native panel resolution, on a
 black background. A white version is one flag away — see
 [Regenerating](#regenerating-the-animation).
 
+![preview](docs/preview.gif)
+
+105 frames: a 45-frame intro that plays once, then a 60-frame loop that
+repeats until Android is ready.
+
 | | |
 |---|---|
 | Package | `dist/PixelTabletBoot-v1.1.0.zip` (888 KB) |
@@ -96,6 +101,7 @@ generator writes the post-rotation dimensions into `desc.txt` for you.
 ```
 build.sh                        package dist/PixelTabletBoot-<version>.zip
 tools/make_bootanimation.py     frame generator
+tools/preview_gif.py            animated GIF preview of build/bootanim/
 module/
   module.prop                   module metadata
   config.sh                     MASK_SAMSUNG_QMG, OVERRIDE_PRODUCT_OEM
